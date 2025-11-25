@@ -3,7 +3,7 @@
  * Plugin Name: Almokhlif Oud Sales Report
  * Plugin URI: https://www.moroccoder.com
  * Description: Extended WooCommerce reporting with detailed order and item-level data, advanced filtering, and Excel export.
- * Version: 1.0.2
+ * Version: 1.0.3
  * Author: Tarik BOUKJIJ
  * Author URI: https://www.moroccoder.com
  * Text Domain: almokhlif-oud-sales-report
@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants
-define( 'ALMOKHLIF_OUDSR_VERSION', '1.0.2' );
+define( 'ALMOKHLIF_OUDSR_VERSION', '1.0.3' );
 define( 'ALMOKHLIF_OUDSR_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'ALMOKHLIF_OUDSR_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'ALMOKHLIF_OUDSR_PLUGIN_FILE', __FILE__ );
