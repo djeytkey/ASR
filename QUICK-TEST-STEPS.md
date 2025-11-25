@@ -28,11 +28,29 @@ git push origin main
 
 ### 3. Create GitHub Release
 
-1. Go to your GitHub repository
-2. Click **Releases** → **Create a new release**
-3. **Tag version**: `v1.0.2` (must start with 'v')
-4. **Release title**: `Version 1.0.2`
-5. Click **Publish release**
+**Option A: Automatic (Recommended)**
+- Just push your code! The workflow will automatically create a release when version changes.
+
+**Option B: Manual via GitHub Website**
+1. Go to: `https://github.com/YOUR_USERNAME/YOUR_REPO_NAME/releases/new`
+   - Or find "Releases" in the right sidebar of your repository
+2. **Tag version**: `v1.0.2` (must start with 'v')
+   - If tag doesn't exist, type it and it will be created
+3. **Release title**: `Version 1.0.2`
+4. Click **Publish release**
+
+**Option C: Using PowerShell Script**
+```powershell
+.\create-release.ps1
+```
+Follow the prompts to create the release automatically.
+
+**Option D: Using Git Commands**
+```bash
+git tag -a v1.0.2 -m "Version 1.0.2"
+git push origin v1.0.2
+```
+Then create release from the tag on GitHub.
 
 ### 4. Check for Update in WordPress
 

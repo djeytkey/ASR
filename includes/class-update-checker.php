@@ -216,14 +216,16 @@ class Almokhlif_Oud_Sales_Report_Update_Checker {
 		$response = wp_remote_get( $api_url, $args );
 		
 		if ( is_wp_error( $response ) ) {
-			return false;
+			// If releases endpoint fails, try tags endpoint as fallback
+			return $this->get_latest_from_tags();
 		}
 		
 		$body = wp_remote_retrieve_body( $response );
 		$data = json_decode( $body, true );
 		
+		// If no release found, try tags as fallback
 		if ( ! isset( $data['tag_name'] ) ) {
-			return false;
+			return $this->get_latest_from_tags();
 		}
 		
 		// Extract version from tag (remove 'v' prefix if present)
@@ -255,6 +257,94 @@ class Almokhlif_Oud_Sales_Report_Update_Checker {
 		);
 		
 		// Cache for 12 hours
+		set_transient( $cache_key, $release_data, 12 * HOUR_IN_SECONDS );
+		
+		return $release_data;
+	}
+	
+	/**
+	 * Get latest version from tags (fallback if no releases exist)
+	 *
+	 * @return array|false Release data or false on failure
+	 */
+	private function get_latest_from_tags() {
+		$api_url = sprintf(
+			'https://api.github.com/repos/%s/%s/tags',
+			$this->github_owner,
+			$this->github_repo
+		);
+		
+		$args = array(
+			'timeout' => 15,
+			'headers' => array(
+				'Accept' => 'application/vnd.github.v3+json',
+				'User-Agent' => 'WordPress-Plugin-Update-Checker',
+			),
+		);
+		
+		// Add token for private repositories
+		if ( ! empty( $this->github_token ) ) {
+			$args['headers']['Authorization'] = 'token ' . $this->github_token;
+		}
+		
+		$response = wp_remote_get( $api_url, $args );
+		
+		if ( is_wp_error( $response ) ) {
+			return false;
+		}
+		
+		$body = wp_remote_retrieve_body( $response );
+		$tags = json_decode( $body, true );
+		
+		if ( ! is_array( $tags ) || empty( $tags ) ) {
+			return false;
+		}
+		
+		// Find the latest version tag (tags starting with 'v' followed by version number)
+		$latest_tag = null;
+		$latest_version = '0.0.0';
+		
+		foreach ( $tags as $tag ) {
+			if ( ! isset( $tag['name'] ) ) {
+				continue;
+			}
+			
+			$tag_name = $tag['name'];
+			$version = ltrim( $tag_name, 'v' );
+			
+			// Check if it's a valid version number
+			if ( preg_match( '/^\d+\.\d+\.\d+$/', $version ) && version_compare( $version, $latest_version, '>' ) ) {
+				$latest_version = $version;
+				$latest_tag = $tag;
+			}
+		}
+		
+		if ( ! $latest_tag ) {
+			return false;
+		}
+		
+		// Create download URL from tag
+		$download_url = sprintf(
+			'https://api.github.com/repos/%s/%s/zipball/%s',
+			$this->github_owner,
+			$this->github_repo,
+			$latest_tag['name']
+		);
+		
+		// Add token for private repos
+		if ( ! empty( $this->github_token ) ) {
+			$download_url = add_query_arg( 'access_token', $this->github_token, $download_url );
+		}
+		
+		$release_data = array(
+			'version'      => $latest_version,
+			'url'          => sprintf( 'https://github.com/%s/%s/releases/tag/%s', $this->github_owner, $this->github_repo, $latest_tag['name'] ),
+			'download_url' => $download_url,
+			'changelog'    => sprintf( 'Version %s (from tag %s)', $latest_version, $latest_tag['name'] ),
+		);
+		
+		// Cache for 12 hours
+		$cache_key = 'almokhlif_oud_sr_latest_release';
 		set_transient( $cache_key, $release_data, 12 * HOUR_IN_SECONDS );
 		
 		return $release_data;
