@@ -13,26 +13,25 @@ jobs:
     name: Create GitHub Release
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    permissions:
+      contents: write
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
-      - name: Setup GitHub CLI
-        run: |
-          type -p curl >/dev/null || (apt update && apt install curl -y)
-          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
-          && chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
-          && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-          && apt update \
-          && apt install gh -y
+          token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Extract version from plugin file
         id: get_version
         run: |
-          VERSION=$(grep -oP "Version:\s+\K[0-9]+\.[0-9]+\.[0-9]+" almokhlif-oud-sales-report.php | head -1)
+          # Use sed instead of grep -oP for better compatibility
+          VERSION=$(grep "Version:" almokhlif-oud-sales-report.php | sed -n 's/.*Version:[[:space:]]*\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/p' | head -1)
+          if [ -z "$VERSION" ]; then
+            echo "Error: Could not extract version from plugin file"
+            exit 1
+          fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "tag=v$VERSION" >> $GITHUB_OUTPUT
           echo "Extracted version: $VERSION"
@@ -59,16 +58,20 @@ jobs:
       
       - name: Create GitHub Release
         if: steps.check_tag.outputs.exists == 'false'
-        run: |
-          gh release create "${{ steps.get_version.outputs.tag }}" \
-            --title "Version ${{ steps.get_version.outputs.version }}" \
-            --notes "## Version ${{ steps.get_version.outputs.version }}
-          
-          ### Changes
-          - Version updated to ${{ steps.get_version.outputs.version }}
-          
-          ### Installation
-          This release can be automatically updated in WordPress if GitHub settings are configured in the plugin settings."
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.get_version.outputs.tag }}
+          name: Version ${{ steps.get_version.outputs.version }}
+          body: |
+            ## Version ${{ steps.get_version.outputs.version }}
+            
+            ### Changes
+            - Version updated to ${{ steps.get_version.outputs.version }}
+            
+            ### Installation
+            This release can be automatically updated in WordPress if GitHub settings are configured in the plugin settings.
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
