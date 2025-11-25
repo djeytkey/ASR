@@ -1,0 +1,15 @@
+{
+    "name": "almokhlif/oud-sales-report",
+    "description": "WooCommerce plugin for detailed sales reporting with Excel export",
+    "type": "wordpress-plugin",
+    "require": {
+        "php": ">=7.4",
+        "phpoffice/phpspreadsheet": "^1.29"
+    },
+    "autoload": {
+        "psr-4": {
+            "Almokhlif_Oud_Sales_Report\\": "includes/"
+        }
+    }
+}
+
