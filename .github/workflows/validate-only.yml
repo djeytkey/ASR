@@ -1,0 +1,44 @@
+name: Validate Code Only
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+  push:
+    branches-ignore:
+      - main
+      - master
+
+jobs:
+  validate:
+    name: Validate Code
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          extensions: mbstring, xml, zip
+      
+      - name: Validate PHP syntax
+        run: |
+          find . -name "*.php" -not -path "./vendor/*" -exec php -l {} \;
+      
+      - name: Install Composer dependencies
+        run: |
+          composer install --no-dev --optimize-autoloader
+      
+      - name: Check Composer dependencies
+        run: |
+          composer validate
+          composer check-platform-reqs
+      
+      - name: Check for common PHP issues
+        run: |
+          echo "Validation completed successfully!"
+

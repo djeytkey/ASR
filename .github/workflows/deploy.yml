@@ -1,0 +1,93 @@
+name: Validate and Deploy to WordPress
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  validate:
+    name: Validate Code
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          extensions: mbstring, xml, zip
+      
+      - name: Validate PHP syntax
+        run: |
+          find . -name "*.php" -not -path "./vendor/*" -exec php -l {} \;
+      
+      - name: Install Composer dependencies
+        run: |
+          composer install --no-dev --optimize-autoloader
+      
+      - name: Check Composer dependencies
+        run: |
+          composer validate
+          composer check-platform-reqs
+
+  deploy:
+    name: Deploy to WordPress
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
+          extensions: mbstring, xml, zip
+      
+      - name: Install Composer dependencies
+        run: |
+          composer install --no-dev --optimize-autoloader
+      
+      - name: Deploy to WordPress via FTP
+        uses: SamKirkland/FTP-Deploy-Action@4.3.0
+        with:
+          server: ${{ secrets.WORDPRESS_FTP_SERVER }}
+          username: ${{ secrets.WORDPRESS_FTP_USERNAME }}
+          password: ${{ secrets.WORDPRESS_FTP_PASSWORD }}
+          server-dir: /wp-content/plugins/almokhlif-oud-sales-report/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            **/.github/**
+            **/.DS_Store
+            **/README.md
+            **/.gitignore
+      
+      - name: Deploy to WordPress via SSH (Alternative)
+        if: ${{ secrets.WORDPRESS_SSH_HOST != '' }}
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.WORDPRESS_SSH_HOST }}
+          username: ${{ secrets.WORDPRESS_SSH_USERNAME }}
+          key: ${{ secrets.WORDPRESS_SSH_KEY }}
+          port: ${{ secrets.WORDPRESS_SSH_PORT || 22 }}
+          source: "."
+          target: "${{ secrets.WORDPRESS_SSH_PATH }}/wp-content/plugins/almokhlif-oud-sales-report/"
+          exclude: |
+            .git
+            .github
+            node_modules
+            .DS_Store
+            README.md
+            .gitignore
+            vendor/composer/installed.json
+            vendor/composer/InstalledVersions.php
+

@@ -58,6 +58,31 @@ The plugin creates a custom table `wp_almokhlif_oud_sales_report` with the follo
 **Tarik BOUKJIJ**  
 Website: https://www.moroccoder.com
 
+## Deployment
+
+This repository uses GitHub Actions for automated validation and deployment to WordPress.
+
+### Quick Setup
+
+1. **Push to GitHub** (private repository):
+   ```bash
+   git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+   git branch -M main
+   git add .
+   git commit -m "Initial commit"
+   git push -u origin main
+   ```
+
+2. **Configure GitHub Secrets** (Settings → Secrets and variables → Actions):
+   - For FTP: `WORDPRESS_FTP_SERVER`, `WORDPRESS_FTP_USERNAME`, `WORDPRESS_FTP_PASSWORD`
+   - For SSH: `WORDPRESS_SSH_HOST`, `WORDPRESS_SSH_USERNAME`, `WORDPRESS_SSH_KEY`, `WORDPRESS_SSH_PATH`
+
+3. **Automatic Deployment**:
+   - Push to `main` branch → Code is validated → If valid, automatically deployed to WordPress
+   - Pull requests → Code is validated only (no deployment)
+
+For detailed deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md).
+
 ## License
 
 This plugin is proprietary software.

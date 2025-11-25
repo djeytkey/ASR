@@ -31,9 +31,21 @@ class Almokhlif_Oud_Sales_Report_Settings_Page {
 			}
 		}
 		
+		// Handle GitHub settings submission
+		if ( isset( $_POST['almokhlif_oud_sales_report_save_github'] ) && check_admin_referer( 'almokhlif_oud_sales_report_github_settings' ) ) {
+			$this->save_github_settings();
+			echo '<div class="notice notice-success"><p>' . esc_html__( 'GitHub settings saved successfully.', 'almokhlif-oud-sales-report' ) . '</p></div>';
+		}
+		
 		// Get current settings
 		$settings = get_option( 'almokhlif_oud_sales_report_settings', array() );
 		$default_statuses = isset( $settings['default_order_statuses'] ) ? $settings['default_order_statuses'] : array();
+		
+		// Get GitHub settings
+		$github_settings = get_option( 'almokhlif_oud_sales_report_github_settings', array() );
+		$github_owner = isset( $github_settings['owner'] ) ? $github_settings['owner'] : '';
+		$github_repo = isset( $github_settings['repo'] ) ? $github_settings['repo'] : '';
+		$github_token = isset( $github_settings['token'] ) ? $github_settings['token'] : '';
 		
 		// Get available order statuses
 		$order_statuses = wc_get_order_statuses();
@@ -69,6 +81,53 @@ class Almokhlif_Oud_Sales_Report_Settings_Page {
 				
 				<?php submit_button( __( 'حفظ الإعدادات', 'almokhlif-oud-sales-report' ), 'primary', 'almokhlif_oud_sales_report_save_settings' ); ?>
 			</form>
+			
+			<!-- GitHub Update Settings Section -->
+			<div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd;">
+				<h2><?php esc_html_e( 'إعدادات التحديث من GitHub', 'almokhlif-oud-sales-report' ); ?></h2>
+				<p class="description">
+					<?php esc_html_e( 'قم بتكوين إعدادات GitHub لتمكين التحديثات التلقائية من المستودع الخاص.', 'almokhlif-oud-sales-report' ); ?>
+				</p>
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin.php?page=almokhlif-oud-sales-report-settings' ) ); ?>">
+					<?php wp_nonce_field( 'almokhlif_oud_sales_report_github_settings' ); ?>
+					<table class="form-table">
+						<tbody>
+							<tr>
+								<th scope="row">
+									<label for="github_owner"><?php esc_html_e( 'مالك المستودع (Owner)', 'almokhlif-oud-sales-report' ); ?></label>
+								</th>
+								<td>
+									<input type="text" id="github_owner" name="github_owner" value="<?php echo esc_attr( $github_owner ); ?>" class="regular-text" placeholder="username">
+									<p class="description"><?php esc_html_e( 'اسم المستخدم أو المنظمة على GitHub', 'almokhlif-oud-sales-report' ); ?></p>
+								</td>
+							</tr>
+							<tr>
+								<th scope="row">
+									<label for="github_repo"><?php esc_html_e( 'اسم المستودع (Repository)', 'almokhlif-oud-sales-report' ); ?></label>
+								</th>
+								<td>
+									<input type="text" id="github_repo" name="github_repo" value="<?php echo esc_attr( $github_repo ); ?>" class="regular-text" placeholder="repository-name">
+									<p class="description"><?php esc_html_e( 'اسم المستودع على GitHub', 'almokhlif-oud-sales-report' ); ?></p>
+								</td>
+							</tr>
+							<tr>
+								<th scope="row">
+									<label for="github_token"><?php esc_html_e( 'رمز الوصول (Token)', 'almokhlif-oud-sales-report' ); ?></label>
+								</th>
+								<td>
+									<input type="password" id="github_token" name="github_token" value="<?php echo esc_attr( $github_token ); ?>" class="regular-text" placeholder="ghp_xxxxxxxxxxxx">
+									<p class="description">
+										<?php esc_html_e( 'رمز الوصول الشخصي (Personal Access Token) للمستودعات الخاصة. اتركه فارغاً للمستودعات العامة.', 'almokhlif-oud-sales-report' ); ?>
+										<br>
+										<a href="https://github.com/settings/tokens" target="_blank"><?php esc_html_e( 'إنشاء رمز وصول جديد', 'almokhlif-oud-sales-report' ); ?></a>
+									</p>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+					<?php submit_button( __( 'حفظ إعدادات GitHub', 'almokhlif-oud-sales-report' ), 'secondary', 'almokhlif_oud_sales_report_save_github' ); ?>
+				</form>
+			</div>
 			
 			<!-- Demo Data Section -->
 			<div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd;">
@@ -135,6 +194,23 @@ class Almokhlif_Oud_Sales_Report_Settings_Page {
 		
 		// Save to database
 		update_option( 'almokhlif_oud_sales_report_settings', $settings );
+	}
+	
+	/**
+	 * Save GitHub settings
+	 */
+	private function save_github_settings() {
+		$github_settings = array(
+			'owner' => isset( $_POST['github_owner'] ) ? sanitize_text_field( $_POST['github_owner'] ) : '',
+			'repo'  => isset( $_POST['github_repo'] ) ? sanitize_text_field( $_POST['github_repo'] ) : '',
+			'token' => isset( $_POST['github_token'] ) ? sanitize_text_field( $_POST['github_token'] ) : '',
+		);
+		
+		// Save to database
+		update_option( 'almokhlif_oud_sales_report_github_settings', $github_settings );
+		
+		// Clear update cache
+		delete_transient( 'almokhlif_oud_sr_latest_release' );
 	}
 }
 
